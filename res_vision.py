@@ -8,7 +8,6 @@ import os
 import cv2 as cv
 
 
-
 def extend_0_to_255(img):
     img = numpy.array(img)
     max = numpy.max(img)
@@ -21,50 +20,52 @@ def extend_0_to_255(img):
                 imgcd[i][j][k] = 255 * (img[i][j][k] - min) / (max - min)
     # print(max, min)
     return imgcd
+
+
 def saveaspng():
-    #cutted
+    # cutted
     # im = gdal.Open(r"E:\codes\dataset\CIA\train_set\M2001_338_04dec.tif").ReadAsArray() #
     # im = gdal.Open(r"E:\codes\dataset\CIA\train_set\L2001_338_04dec.tif").ReadAsArray() #
 
     # im = gdal.Open(r"E:\codes\dataset\LGC\train_set\L20050129_TM.tif").ReadAsArray() #
     # im = gdal.Open(r"E:\codes\dataset\LGC\train_set\M20050129_TM.tif").ReadAsArray() #
 
-    #original
+    # original
     # im = gdal.Open(r"E:\datasets\stfdatasets\Coleambally_Irrigation_Area\CIA\Landsat\2001_338_04dec\L71093084_08420011203_HRF_modtran_surf_ref_agd66.tif").ReadAsArray() #
     # im = gdal.Open(r"E:\datasets\stfdatasets\Coleambally_Irrigation_Area\CIA\MODIS\2001_338_04dec\MOD09GA_A2001338.sur_refl.tif").ReadAsArray() #
 
     # im = gdal.Open(r"E:\datasets\stfdatasets\LGC\LGC\Landsat\2005_029_Jan29\20050129_TM.tif").ReadAsArray() #
     # im = gdal.Open(r"E:\datasets\stfdatasets\LGC\LGC\MODIS\2005_029_Jan29\MOD09GA_A2005029.sur_refl.tif").ReadAsArray() #
 
-    #experiencement result
+    # experiencement result
     # im = gdal.Open(r"E:\codes\dataset\res\stfmlp\CIA\stfmlp_L2001_338_04dec.tif").ReadAsArray() #
-    im = gdal.Open(r"F:\Ediskbackup\datasets\stfdatasets\LGC\LGC\MODIS\2004_107_Apr16\MOD09GA_A2004107.sur_refl.tif").ReadAsArray() #
+    im = gdal.Open(r"F:\Ediskbackup\datasets\stfdatasets\LGC\LGC\MODIS\2004_107_Apr16\MOD09GA_A2004107.sur_refl.tif").ReadAsArray()  #
     # im = gdal.Open( r"E:\stfnew_L20040502_TM.tif").ReadAsArray()
 
     target = r"E:\codes\dataset\res\resvision"
     # cia 和 LGC需要除以10000， 李军老师的三个数据集不需要。
-    im = im/10000
-    im = torch.tensor(im[ 3: : ])
+    im = im / 10000
+    im = torch.tensor(im[3::])
     img = transforms.ToPILImage()(im).convert('RGB')
     plt.figure('landsat: img_data')
 
     img = extend_0_to_255(img)
 
-    #cutted
+    # cutted
     # Image.fromarray(imgcd.astype("uint8")).convert("RGB").save(os.path.join(target,"ciamodis338.png"))
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"cialandsat338.png"))
 
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"lgcL20050129_TM.png"))
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"lgcM20050129_TM.png"))
 
-    #original
+    # original
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"ciaoriginal338L71093084_08420011203_HRF_modtran_surf_ref_agd66.png"))
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"ciaoriginal338MOD09GA_A2001338.sur_refl.png"))
 
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"lgcoriginalL20050129_TM.png"))
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"lgcoriginalMOD09GA_A2005029.sur_refl.png"))
 
-    #experiencement result
+    # experiencement result
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"cia-stfmlp_L2001_338_04dec.png"))
     # Image.fromarray(img.astype("uint8")).convert("RGB").save(os.path.join(target,"AHB_Landsat.png"))
 
@@ -73,10 +74,10 @@ def saveaspng():
     plt.yticks([])
     plt.show()
 
-def enlarge():
 
-    #CIA LGC dst
-    #CIA
+def enlarge():
+    # CIA LGC dst
+    # CIA
     # img_path = r"D:\codes\dataset\res\resvision\original\cutted"
     # imgname = r"cialandsat338.png"
     # #LGC
@@ -95,11 +96,9 @@ def enlarge():
     # plt.show()
     # Image.fromarray(dst.astype("uint8")).convert("RGB").save(os.path.join(target,imgname))
 
-
-
     # CIA LGC enlarge
     img_path = r"D:\codes\dataset\res\resvision\original\cutted"
-    #CIA
+    # CIA
     # imgname = r"cialandsat338.png"
     # LGC
     imgname = r"lgcL20050129_TM.png"
@@ -108,19 +107,21 @@ def enlarge():
     dir = os.path.join(img_path, imgname)
     imgarr = Image.open(dir)
     dst = numpy.array(imgarr)
-    #CIA
+    # CIA
     # part = dst[300:600, 250:550]
-    #LGC
+    # LGC
     part = dst[1200:1500, 550:850]
     mask = cv.resize(part, (600, 600), fx=0, fy=0, interpolation=cv.INTER_LINEAR)
     plt.imshow(mask)
     plt.show()
-    Image.fromarray(part.astype("uint8")).convert("RGB").save(os.path.join(target,imgname))
+    Image.fromarray(part.astype("uint8")).convert("RGB").save(os.path.join(target, imgname))
 
 
 import numpy as np
 from skimage import io
-def v2processimage(dir, target, tname, mode, saved = False):
+
+
+def v2processimage(dir, target, tname, mode, saved=False):
     imgarr = io.imread(dir)
     # print(imgarr)
     output = imgarr[:, :, ]
@@ -133,7 +134,7 @@ def v2processimage(dir, target, tname, mode, saved = False):
     io.imshow(dst)
     # print(dst)
     if mode == "cia":
-        #cia
+        # cia
         part = dst[400:500, 350:450]
         mask = cv.resize(part, (500, 500), fx=0, fy=0, interpolation=cv.INTER_LINEAR)
         # 图像大小：1280*1800
@@ -173,10 +174,8 @@ def v2processimage(dir, target, tname, mode, saved = False):
         dst = cv.line(dst, (700, 1300), (1230, 550), (255, 255, 0), 12)
         dst = cv.line(dst, (600, 1300), (730, 550), (255, 255, 0), 12)
 
-
-
     # if saved == True:
-        # Image.fromarray(dst.astype("uint8")).convert("RGB").save(os.path.join(target, tname))
+    # Image.fromarray(dst.astype("uint8")).convert("RGB").save(os.path.join(target, tname))
     io.imshow(dst)
     # plt.xticks([])
     # plt.yticks([])
@@ -184,12 +183,10 @@ def v2processimage(dir, target, tname, mode, saved = False):
     plt.show()
 
 
-
-
 def version2():
     # the enlarged image on original image.
 
-  #cia
+    # cia
     mode = "cia"
 
     # img_path = r"D:\codes\dataset\res\resvision\original\cutted\cialandsat338.png"
@@ -207,8 +204,7 @@ def version2():
     img_path = r"D:\codes\dataset\res\resvision\cia-stfmlp_L2001_338_04dec.png"
     tname = "new-cia-stfmlp_L2001_338_04dec.png"
 
-
-#lgc
+    # lgc
     # mode = "lgc"
     #
     # img_path = r"D:\codes\dataset\res\resvision\original\cutted\lgcL20050129_TM.png"
@@ -226,20 +222,16 @@ def version2():
     # img_path = r"D:\codes\dataset\res\resvision\lgc-stfmlp_L20050129_TM.tif.png"
     # tname = "new2-lgc-stfmlp_L20050129_TM.tif.png"
 
-
-
-
     target = r"D:\codes\dataset\res\resvision"
 
-
-    v2processimage(img_path, target, tname, mode = mode, saved=True)
+    v2processimage(img_path, target, tname, mode=mode, saved=True)
 
 
 if __name__ == "__main__":
     # 第一步
     # saveaspng() #选择三个波段存储为PNG
 
-                                        # enlarge() #不用这个
+    # enlarge() #不用这个
 
     # 第二步
-    version2() #这个是在原图上显示放大的区域
+    version2()  # 这个是在原图上显示放大的区域

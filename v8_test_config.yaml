@@ -13,11 +13,11 @@
 #checkpoints_name: v8_000.pth
 
 
-trainpath: /home/hllu/datasets/CIA/train_set
-logpath: /home/hllu/codes/stf/mlp/v8/logs/testtime
-imglistdir: /home/hllu/codes/stf/datasets/datasetlist/CIA/testlist.txt
-checkpoint_path: /home/hllu/codes/stf/mlp/v8/logs/40/cia
-checkpoints_name: v8_000.pth
+trainpath: D:\useful\program\rs\StfMLP\datasetlist\CIA\train_set
+logpath: D:\useful\program\rs\StfMLP\logs
+imglistdir: D:\useful\program\rs\StfMLP\datasetlist\CIA\testlist.txt
+checkpoint_path: D:\useful\program\rs\StfMLP\logs
+checkpoints_name: v8_idx_0_.pth
 
 #LGC
 #trainpath: /home/hllu/datasets/LGC/train_set

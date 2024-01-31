@@ -5,9 +5,9 @@
 #checkpoint_path: D:/codes/codes/stf/mlp/v8/logs/v8_000.pth
 #checkpoints_name: v8_000.pth
 
-trainpath: /home/hllu/datasets/CIA/train_set
-logpath: /home/hllu/codes/stf/mlp/v8/logs/test_revision/cia
-imglistdir: /home/hllu/codes/stf/datasets/datasetlist/CIA/testlist.txt
+trainpath: D:\useful\program\rs\StfMLP\datasetlist\CIA\train_set
+logpath: D:\useful\program\rs\StfMLP\logs
+imglistdir: D:\useful\program\rs\StfMLP\datasetlist\CIA\testlist.txt
 checkpoint_path: /home/hllu/codes/stf/mlp/v8/logs/60/test_revision/v8_000.pth
 checkpoints_name: v8_000.pth
 #
@@ -28,7 +28,7 @@ version: v8
 
 idx: !!int 1
 batch_size: !!int 64
-img_size: !!int 60
+img_size: !!int 40
 inchannel: !!int 12
 outchannel: !!int 6
 numblocks: !!int 16

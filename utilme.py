@@ -30,9 +30,9 @@
             test_argparse(args):         使用yaml+argparse+命名空间，实现“命名空间”方式配置参数 20211014
 """
 import matplotlib.pyplot as plt
-import osr
+from osgeo import osr
 import numpy as np
-import gdal
+from osgeo import gdal
 from PIL import Image
 import os
 import os.path
@@ -43,17 +43,17 @@ import math
 import cv2
 import torch
 
-
-
 """
 crop_tif():
 
 """
-def crop2tif(sdir,tdir,row,col):
-    #CIA
+
+
+def crop2tif(sdir, tdir, row, col):
+    # CIA
     # top = 20
     # left = 100
-    #LGC
+    # LGC
     top = 30
     left = 30
     img = gdal.Open(sdir)
@@ -63,13 +63,13 @@ def crop2tif(sdir,tdir,row,col):
     image_geotrans = img.GetGeoTransform()  # 获取仿射矩阵信息
     image_projetion = img.GetProjection()  # 获取投影信息
     img_data = img.ReadAsArray()
-    imgarr = img_data[:,top:row+top,left:col+left]
+    imgarr = img_data[:, top:row + top, left:col + left]
     bands, r, c = imgarr.shape
     datatype = gdal.GDT_UInt16
     driver = gdal.GetDriverByName("GTiff")
     datas = driver.Create(tdir, c, r, bands, datatype)
 
-    #设置地理坐标和仿射变换信息,注意这里源图像没有添加坐标和仿射变换信息，所以继承了源图像，存储后的图像不能使用ENVI打开
+    # 设置地理坐标和仿射变换信息,注意这里源图像没有添加坐标和仿射变换信息，所以继承了源图像，存储后的图像不能使用ENVI打开
     datas.SetGeoTransform(image_geotrans)
     datas.SetProjection(image_projetion)
 
@@ -79,67 +79,73 @@ def crop2tif(sdir,tdir,row,col):
     print("save successfully...")
 
 
-
 """
 test_writetotif():针对时空融合数据集CIA中的.bil和.int文件进行读取并转存为.tif格式
     其中.bil使用read_as_bil(dataarr,bands, rows, col)读取
     .int使用read_as_bsq(dataarr,bands, rows, col)读取
 
 """
+
+
 # 依据BIL存储规则，按照存储完一行的所有波段再存储下一行，进行提取并存入数组。
-def read_as_bil(dataarr,bands, rows, col):
-    imgarr = np.zeros((bands,rows,col))
-    for r in range(rows): #取出一行的所有波段
+def read_as_bil(dataarr, bands, rows, col):
+    imgarr = np.zeros((bands, rows, col))
+    for r in range(rows):  # 取出一行的所有波段
         start = r * col * bands
         end = start + col * bands
         arrtem = dataarr[start:end]
-        for b in range(bands): #取出每个波段
+        for b in range(bands):  # 取出每个波段
             start2 = b * col
             end2 = start2 + col
-            imgarr[b,r,:] = arrtem[start2:end2]  #存入数组对应位置
-    return  imgarr
+            imgarr[b, r, :] = arrtem[start2:end2]  # 存入数组对应位置
+    return imgarr
+
+
 # 依据BSQ存储规则，按照存储完单波段整幅图像后再存储下一波段的存储方法进行提取并存入数组。
-def read_as_bsq(dataarr,bands, rows, col):
-    imgarr = np.zeros((bands,rows,col))
-    for b in range(bands):              #取出每个波段
+def read_as_bsq(dataarr, bands, rows, col):
+    imgarr = np.zeros((bands, rows, col))
+    for b in range(bands):  # 取出每个波段
         start = b * rows * col
         end = start + rows * col
         arrtem = dataarr[start:end]
-        for r in range(rows):           #一维数组按行取出，存入对应三维数组。
+        for r in range(rows):  # 一维数组按行取出，存入对应三维数组。
             start2 = r * col
             end2 = start2 + col
-            imgarr[b,r,:] = arrtem[start2:end2]
-    return  imgarr
+            imgarr[b, r, :] = arrtem[start2:end2]
+    return imgarr
+
+
 # 依据BIP存储规则，按照一个像素所有波段进行存储完，再存储下一个像素所有波段的存储方法进行提取并存入数组。
-def read_as_bip(dataarr,bands, rows, col):
-    imgarr = np.zeros((bands,rows,col))
-    for r in range(rows):               #按行列遍历每个像元
+def read_as_bip(dataarr, bands, rows, col):
+    imgarr = np.zeros((bands, rows, col))
+    for r in range(rows):  # 按行列遍历每个像元
         for c in range(col):
-            if r == 0 :
+            if r == 0:
                 pix = c
             else:
                 pix = r * col + c
             start = pix * bands
             end = start + bands
-            arrtem = dataarr[start:end] #从一维数组中取出每个像元的全波段元素（6个）
+            arrtem = dataarr[start:end]  # 从一维数组中取出每个像元的全波段元素（6个）
             for b in range(bands):
-                imgarr[b,r,c] = arrtem[b] # 赋值给对应数组
-    return  imgarr
-def test_writetotif():
+                imgarr[b, r, c] = arrtem[b]  # 赋值给对应数组
+    return imgarr
 
-    #读取二进制数据并转换成int16类型的数组
+
+def test_writetotif():
+    # 读取二进制数据并转换成int16类型的数组
     # dir = r"E:\datasets\stfdatasets\Coleambally_Irrigation_Area\CIA\Landsat\2001_281_08oct\L71093084_08420011007_HRF_modtran_surf_ref_agd66.bil"
     dir = r"E:\datasets\stfdatasets\Coleambally_Irrigation_Area\CIA\MODIS\2001_281_08oct\MOD09GA_A2001281.sur_refl.int"
 
     f = open(dir, 'rb')
-    fint = np.fromfile(f,dtype = np.int16)
+    fint = np.fromfile(f, dtype=np.int16)
 
-    #数据提取
-    bands, rows, col =6, 2040, 1720
+    # 数据提取
+    bands, rows, col = 6, 2040, 1720
     imgarr = read_as_bip(fint, bands, rows, col)
 
-    #将提取的数组存储为tif格式图像.
-    #注意这里未设置地理坐标和仿射变换信息，所以不能用ENVI等软件打开。
+    # 将提取的数组存储为tif格式图像.
+    # 注意这里未设置地理坐标和仿射变换信息，所以不能用ENVI等软件打开。
     # savedir = r"E:\datasets\stfdatasets\Coleambally_Irrigation_Area\CIA\Landsat\2001_281_08oct\L71093084_08420011007_HRF_modtran_surf_ref_agd66.tif"
     savedir = r"E:\datasets\stfdatasets\Coleambally_Irrigation_Area\CIA\MODIS\2001_281_08oct\MOD09GA_A2001281.sur_refl.tif"
     datatype = gdal.GDT_UInt16
@@ -147,7 +153,7 @@ def test_writetotif():
     driver = gdal.GetDriverByName("GTiff")
     datas = driver.Create(savedir, col, rows, bands, datatype)
 
-    #设置地理坐标和仿射变换信息
+    # 设置地理坐标和仿射变换信息
     # datas.SetGeoTransform(image_geotrans)
     # datas.SetProjection(image_projetion)
 
@@ -161,12 +167,14 @@ def test_writetotif():
 test_readbil():
     针对时空融合数据集CIA中的.bil文件进行统计总字节数，并读取其中某个像素点数值
 """
+
+
 def test_readbil():
     # dir = r"E:\datasets\stfdatasets\Coleambally_Irrigation_Area\CIA\Landsat\2001_281_08oct\L71093084_08420011007_HRF_modtran_surf_ref_agd66.bil"
-    f = open(dir,'rb')
-    fint = np.fromfile(f,dtype = np.int16)
-    print(len(fint))    # 输出数组元素总数：21052800
-    print(fint[1])      # 输出数组中第二个元素值：436
+    f = open(dir, 'rb')
+    fint = np.fromfile(f, dtype=np.int16)
+    print(len(fint))  # 输出数组元素总数：21052800
+    print(fint[1])  # 输出数组中第二个元素值：436
     print(fint[50000])  # 输出数组中第50001个元素值：1229
 
     # n = 0
@@ -182,6 +190,8 @@ def test_readbil():
     load_filename_to_list():从文本文件txt中读取每行数据，组成列表返回
         dir:文本文件txt的路径
 """
+
+
 def load_filename_to_list(dir):
     img_name_list = np.loadtxt(dir, dtype=np.str)
     if img_name_list.ndim == 2:
@@ -194,16 +204,18 @@ def load_filename_to_list(dir):
         imgdir:包含文件的文件夹路径。
         txtdir:需要写入的txt文件路径。 
 """
+
+
 def write_imgname_to_textfile1(imgdir, txtdir):
-    f = open(txtdir,'a')
+    f = open(txtdir, 'a')
     tem = []
     for file in os.listdir(imgdir):
         tem.append(file)
 
-    tem1 = tem[0:len(tem)//2]
-    tem2 = tem[len(tem)//2:len(tem)]
-    for i in range(len(tem1)-2):
-        f.write("{}\n".format(tem1[i] +" "+ tem1[i+1] +" " + tem1[i+2] +" "+ tem2[i] +" "+ tem2[i+1]+" "+ tem2[i+2]))
+    tem1 = tem[0:len(tem) // 2]
+    tem2 = tem[len(tem) // 2:len(tem)]
+    for i in range(len(tem1) - 2):
+        f.write("{}\n".format(tem1[i] + " " + tem1[i + 1] + " " + tem1[i + 2] + " " + tem2[i] + " " + tem2[i + 1] + " " + tem2[i + 2]))
     f.close()
     print("write to txt finished...")
 
@@ -216,22 +228,28 @@ def write_imgname_to_textfile1(imgdir, txtdir):
 
 
 def write_imgname_to_txtfile(imgdir, txtdir):
-    f = open(txtdir,'a')
+    f = open(txtdir, 'a')
     for file in os.listdir(imgdir):
         f.write("{}\n".format(file))
     f.close()
     print("write to txt finished...")
-#example
+
+
+# example
 def example():
     imgdir = r"E:\codes\dataset\LGC\train_set"
     txtdir = r"E:\codes\codes\stf\datasets\stfganlist\LGC\totallist.txt"
     write_imgname_to_txtfile(imgdir, txtdir)
+
+
 """
 padding，根据快行数和列数自动计算需要paddingd的行数和列数
     arr: 需要执行padding操作的数组
     partrow: 每块行数
     partcol：每块列数
 """
+
+
 def padding(arr, partrow, partcol):
     band, r, c = arr.shape
     # print("padding before %s"%str(arr.shape))
@@ -258,6 +276,8 @@ def padding(arr, partrow, partcol):
     idx: 序号
 
 """
+
+
 def getimgblock(arr, idx, partrow, partcol):
     band, r, c = arr.shape
     rnum = r / partrow
@@ -271,7 +291,7 @@ def getimgblock(arr, idx, partrow, partcol):
     idcstart = partcol * idc
     idcend = partcol * idc + partcol
 
-    img= arr[idb, idrstart:idrend, idcstart:idcend]
+    img = arr[idb, idrstart:idrend, idcstart:idcend]
     return img
 
 
@@ -283,6 +303,8 @@ def getimgblock(arr, idx, partrow, partcol):
     idx: 序号
 
 """
+
+
 def getimgblock2(arr, idx, partrow, partcol):
     band, r, c = arr.shape
     rnum = r / partrow
@@ -316,7 +338,7 @@ def getimgblock2(arr, idx, partrow, partcol):
     #     # img = img + tem
     #     return img
 
-    img= arr[:, idrstart:idrend, idcstart:idcend]
+    img = arr[:, idrstart:idrend, idcstart:idcend]
     return img
 
 
@@ -328,7 +350,9 @@ getimgblock3():对给定多光谱图像，进行分块并排序，每块包含�
     idx: 序号
 
 """
-def getimgblock3(arr, idx, partrow, partcol, overlap = 0):
+
+
+def getimgblock3(arr, idx, partrow, partcol, overlap=0):
     band, r, c = arr.shape
     rnum = r / partrow
     cnum = c / partcol
@@ -341,20 +365,16 @@ def getimgblock3(arr, idx, partrow, partcol, overlap = 0):
     idcend = partcol * idc + partcol
 
     if (idrstart - overlap) >= 0:
-        idrstart-=overlap
+        idrstart -= overlap
 
-    idrend+= overlap
-    if (idcstart-overlap) >= 0:
-        idcstart -=overlap
+    idrend += overlap
+    if (idcstart - overlap) >= 0:
+        idcstart -= overlap
 
     idcend += overlap
 
-
-
-
-    img= arr[:, idrstart:idrend, idcstart:idcend]
+    img = arr[:, idrstart:idrend, idcstart:idcend]
     return img
-
 
 
 """
@@ -362,11 +382,12 @@ readdatasist(path):按行读取指定文件中的路径，然后按空格分割�
     path:数据文件的路径
     
 """
-def readdatasist(path):
 
+
+def readdatasist(path):
     listdata = []
     with open(path, 'r') as file_to_read:
-        pathhead, _= os.path.split(path)
+        pathhead, _ = os.path.split(path)
         print(pathhead)
         while True:
             lines = file_to_read.readline()  # 整行读取数据
@@ -381,26 +402,27 @@ def readdatasist(path):
     return listdata
 
 
-
 """
 存储模型参数：
     m: 模型
     path: 模型存储路径，不包括文件名
     logger：记入日志
 """
-def savemodel(m, path, logger = None):
+
+
+def savemodel(m, path, logger=None):
     # pathhead, _ = os.path.split(path) # 将路径和文件名分开
-    #path = os.path.join(pathhead, 'model_weights.pth')
+    # path = os.path.join(pathhead, 'model_weights.pth')
     # rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
     # filename = rq + "model_weights.pth"
-    filename ="model_weights.pth"
+    filename = "model_weights.pth"
     pathfile = os.path.join(path, filename)
     torch.save(m.state_dict(), pathfile)
-    print("    model dict save successfully, from %s......"%pathfile)
+    print("    model dict save successfully, from %s......" % pathfile)
     if logger == None:
         pass
     else:
-        logger.debug("    model dict save successfully, from %s......"%pathfile)
+        logger.debug("    model dict save successfully, from %s......" % pathfile)
 
 
 """
@@ -409,22 +431,24 @@ def savemodel(m, path, logger = None):
     path：模型参数存储路径，包括文件名
     logger: 记入日志
 """
-def loadmodel(m, path, logger = None):
-    filename ="model_weights.pth"
+
+
+def loadmodel(m, path, logger=None):
+    filename = "model_weights.pth"
     pathfile = os.path.join(path, filename)
     if os.path.exists(pathfile):
         m.load_state_dict(torch.load(pathfile, map_location=torch.device('cpu')))
-        print("    loading model dict successfully from %s ....."%pathfile)
+        print("    loading model dict successfully from %s ....." % pathfile)
         if logger == None:
             pass
         else:
-            logger.debug("    loading model dict successfully from %s ....."%pathfile)
+            logger.debug("    loading model dict successfully from %s ....." % pathfile)
     else:
-        print("    loading model filed, model dict not exist, from %s....."%pathfile)
+        print("    loading model filed, model dict not exist, from %s....." % pathfile)
         if logger == None:
             pass
         else:
-            logger.debug("    loading model filed, model dict not exist, from %s....."%pathfile)
+            logger.debug("    loading model filed, model dict not exist, from %s....." % pathfile)
     return m
 
 
@@ -441,6 +465,8 @@ isodata多光谱分类
 
 
 """
+
+
 class Pixel:
     """Pixel"""
 
@@ -448,12 +474,16 @@ class Pixel:
         self.x = initX
         self.y = initY
         self.color = initColor
+
+
 class Cluster:
     """Cluster in Gray"""
 
     def __init__(self, initCenter):
         self.center = initCenter
         self.pixelList = []
+
+
 class ClusterPair:
     """Cluster Pair"""
 
@@ -461,14 +491,16 @@ class ClusterPair:
         self.clusterAIndex = initClusterAIndex
         self.clusterBIndex = initClusterBIndex
         self.distance = initDistance
-def distanceBetween(colorA, colorB) -> float:
 
+
+def distanceBetween(colorA, colorB) -> float:
     d1 = int(colorA[0]) - int(colorB[0])
     d2 = int(colorA[1]) - int(colorB[1])
     d3 = int(colorA[2]) - int(colorB[2])
     return math.sqrt((d1 ** 2) + (d2 ** 2) + (d3 ** 2))
-def distanceBetween6(colorA, colorB) -> float:
 
+
+def distanceBetween6(colorA, colorB) -> float:
     d1 = int(colorA[0]) - int(colorB[0])
     d2 = int(colorA[1]) - int(colorB[1])
     d3 = int(colorA[2]) - int(colorB[2])
@@ -476,26 +508,28 @@ def distanceBetween6(colorA, colorB) -> float:
     d5 = int(colorA[4]) - int(colorB[4])
     d6 = int(colorA[5]) - int(colorB[5])
     return math.sqrt((d1 ** 2) + (d2 ** 2) + (d3 ** 2) + (d4 ** 2) + (d5 ** 2) + (d6 ** 2))
+
+
 def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC: int, L: int, I: int):
     # dataset = gdal.Open("before.img")
     im_bands = dataset.RasterCount  # 波段数
-    print("im_bands:",im_bands)
+    print("im_bands:", im_bands)
     imgX = dataset.RasterXSize  # 栅格矩阵的列数
     imgY = dataset.RasterYSize  # 栅格矩阵的行数
 
     im_geotrans = dataset.GetGeoTransform()  # 仿射矩阵
     im_proj = dataset.GetProjection()  # 地图投影信息
     imgArray = dataset.ReadAsArray(0, 0, imgX, imgY)  # 获取数据
-    #添加以下一行，调换宽高（506行调换回来）
+    # 添加以下一行，调换宽高（506行调换回来）
     imgArray = imgArray.transpose(0, 2, 1)
     print(imgArray.shape)
-    print("imgx %d , imgy%d"%(imgX,imgY))
+    print("imgx %d , imgy%d" % (imgX, imgY))
     clusterList = []
     # 随机生成聚类中心
     for i in range(0, K):
 
         randomX = random.randint(0, imgX - 1)
-        randomY = random.randint(0, imgY- 1)
+        randomY = random.randint(0, imgY - 1)
 
         duplicated = False
 
@@ -507,14 +541,13 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
                 duplicated = True
                 break
 
-
         if not duplicated:
             clusterList.append(Cluster(np.array([imgArray[0, randomX, randomY],
-                                                    imgArray[1, randomX, randomY],
-                                                    imgArray[2, randomX, randomY]
+                                                 imgArray[1, randomX, randomY],
+                                                 imgArray[2, randomX, randomY]
 
-                                                    ],
-                                                   dtype=np.uint8)))
+                                                 ],
+                                                dtype=np.uint8)))
 
     # 开始迭代
     iterationCount = 0
@@ -532,7 +565,7 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
         print("分类...", end='', flush=True)
         for row in range(0, imgX):
             for col in range(0, imgY):
-                #print("row %d, col %d"%(row,col))
+                # print("row %d, col %d"%(row,col))
                 targetClusterIndex = 0
                 targetClusterDistance = distanceBetween(imgArray[:, row, col], clusterList[0].center)
                 # 分类
@@ -564,7 +597,6 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
             sum2 = 0.0
             sum3 = 0.0
 
-
             for pixel in cluster.pixelList:
                 sum1 += int(pixel.color[0])
                 sum2 += int(pixel.color[1])
@@ -573,7 +605,6 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
             ave1 = round(sum1 / len(cluster.pixelList))
             ave2 = round(sum2 / len(cluster.pixelList))
             ave3 = round(sum3 / len(cluster.pixelList))
-
 
             if (ave1 != cluster.center[0] and
                     ave2 != cluster.center[1] and
@@ -615,7 +646,6 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
                     currentSD[1] += (int(pixel.color[1]) - int(clusterList[i].center[1])) ** 2
                     currentSD[2] += (int(pixel.color[2]) - int(clusterList[i].center[2])) ** 2
 
-
                 currentSD[0] = math.sqrt(currentSD[0] / len(clusterList[i].pixelList))
                 currentSD[1] = math.sqrt(currentSD[1] / len(clusterList[i].pixelList))
                 currentSD[2] = math.sqrt(currentSD[2] / len(clusterList[i].pixelList))
@@ -635,21 +665,21 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
                     clusterList[i].center[2] += gamma
 
                     clusterList.append(Cluster(np.array([clusterList[i].center[0],
-                                                            clusterList[i].center[1],
-                                                            clusterList[i].center[2]
+                                                         clusterList[i].center[1],
+                                                         clusterList[i].center[2]
 
-                                                            ],
-                                                           dtype=np.uint8)))
+                                                         ],
+                                                        dtype=np.uint8)))
                     clusterList[i].center[0] -= gamma * 2
                     clusterList[i].center[1] -= gamma * 2
                     clusterList[i].center[2] -= gamma * 2
 
                     clusterList.append(Cluster(np.array([clusterList[i].center[0],
-                                                            clusterList[i].center[1],
-                                                            clusterList[i].center[2]
+                                                         clusterList[i].center[1],
+                                                         clusterList[i].center[2]
 
-                                                            ],
-                                                           dtype=np.uint8)))
+                                                         ],
+                                                        dtype=np.uint8)))
 
                     clusterList.pop(i)
             print(" {0} -> {1}".format(beforeCount, len(clusterList)))
@@ -697,7 +727,6 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
                                          len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
                                      clusterList[clusterPair.clusterBIndex].pixelList)))
 
-
                 newClusterCenterList.append(
                     [newCenter1, newCenter2, newCenter3])
 
@@ -716,7 +745,7 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
             for center in newClusterCenterList:
                 clusterList.append(Cluster(
                     np.array([center[0], center[1], center[2]],
-                                dtype=np.uint8)))
+                             dtype=np.uint8)))
             print(" {0} -> {1}".format(beforeCount, len(clusterList)))
 
     # 生成新的图像矩阵
@@ -755,33 +784,35 @@ def isodata_mutispectral(dataset, outputfilename, K: int, TN: int, TS: float, TC
     IsoData.SetGeoTransform(im_geotrans)  # 写入仿射变换参数
     print("设置投影信息")
     IsoData.SetProjection(im_proj)  # 写入投影
-    #修改调换回89行调换的宽高
-    newImgArray=newImgArray.transpose(0,2,1)
+    # 修改调换回89行调换的宽高
+    newImgArray = newImgArray.transpose(0, 2, 1)
     for i in range(3):
         IsoData.GetRasterBand(i + 1).WriteArray(newImgArray[i])
 
     del dataset
     print("ISODATA非监督分类完成")
+
+
 def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, TC: float, L: int, I: int):
     # dataset = gdal.Open("before.img")
     im_bands = dataset.RasterCount  # 波段数
-    print("im_bands:",im_bands)
+    print("im_bands:", im_bands)
     imgX = dataset.RasterXSize  # 栅格矩阵的列数
     imgY = dataset.RasterYSize  # 栅格矩阵的行数
 
     im_geotrans = dataset.GetGeoTransform()  # 仿射矩阵
     im_proj = dataset.GetProjection()  # 地图投影信息
     imgArray = dataset.ReadAsArray(0, 0, imgX, imgY)  # 获取数据
-    #添加以下一行，调换宽高（506行调换回来）
+    # 添加以下一行，调换宽高（506行调换回来）
     imgArray = imgArray.transpose(0, 2, 1)
     print(imgArray.shape)
-    print("imgx %d , imgy%d"%(imgX,imgY))
+    print("imgx %d , imgy%d" % (imgX, imgY))
     clusterList = []
     # 随机生成聚类中心
     for i in range(0, K):
 
         randomX = random.randint(0, imgX - 1)
-        randomY = random.randint(0, imgY- 1)
+        randomY = random.randint(0, imgY - 1)
 
         duplicated = False
         for cluster in clusterList:
@@ -798,15 +829,13 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
 
         if not duplicated:
             clusterList.append(Cluster(np.array([imgArray[0, randomX, randomY],
-                                                    imgArray[1, randomX, randomY],
-                                                    imgArray[2, randomX, randomY],
-                                                    imgArray[3, randomX, randomY],
-                                                    imgArray[4, randomX, randomY],
-                                                    imgArray[5, randomX, randomY]
-                                                    ],
-                                                   dtype=np.uint8)))
-
-
+                                                 imgArray[1, randomX, randomY],
+                                                 imgArray[2, randomX, randomY],
+                                                 imgArray[3, randomX, randomY],
+                                                 imgArray[4, randomX, randomY],
+                                                 imgArray[5, randomX, randomY]
+                                                 ],
+                                                dtype=np.uint8)))
 
     # 开始迭代
     iterationCount = 0
@@ -824,7 +853,7 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
         print("分类...", end='', flush=True)
         for row in range(0, imgX):
             for col in range(0, imgY):
-                #print("row %d, col %d"%(row,col))
+                # print("row %d, col %d"%(row,col))
                 targetClusterIndex = 0
                 targetClusterDistance = distanceBetween6(imgArray[:, row, col], clusterList[0].center)
                 # 分类
@@ -873,7 +902,6 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
             ave5 = round(sum5 / len(cluster.pixelList))
             ave6 = round(sum6 / len(cluster.pixelList))
 
-
             if (ave1 != cluster.center[0] and
                     ave2 != cluster.center[1] and
                     ave3 != cluster.center[2] and
@@ -883,7 +911,6 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
             ):
                 didAnythingInLastIteration = True
             cluster.center = np.array([ave1, ave2, ave3, ave4, ave5, ave6, ave6], dtype=np.uint8)
-
 
         print("结束")
         if iterationCount > I:
@@ -926,7 +953,6 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
                 currentSD[4] = math.sqrt(currentSD[4] / len(clusterList[i].pixelList))
                 currentSD[5] = math.sqrt(currentSD[5] / len(clusterList[i].pixelList))
 
-
                 # 计算各波段最大标准差
                 # Find the max in SD of R, G and B
                 maxSD = currentSD[0]
@@ -944,15 +970,14 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
                     clusterList[i].center[4] += gamma
                     clusterList[i].center[5] += gamma
 
-
                     clusterList.append(Cluster(np.array([clusterList[i].center[0],
-                                                            clusterList[i].center[1],
-                                                            clusterList[i].center[2],
-                                                            clusterList[i].center[3],
-                                                            clusterList[i].center[4],
-                                                            clusterList[i].center[5]
-                                                            ],
-                                                           dtype=np.uint8)))
+                                                         clusterList[i].center[1],
+                                                         clusterList[i].center[2],
+                                                         clusterList[i].center[3],
+                                                         clusterList[i].center[4],
+                                                         clusterList[i].center[5]
+                                                         ],
+                                                        dtype=np.uint8)))
                     clusterList[i].center[0] -= gamma * 2
                     clusterList[i].center[1] -= gamma * 2
                     clusterList[i].center[2] -= gamma * 2
@@ -961,16 +986,14 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
                     clusterList[i].center[5] -= gamma * 2
 
                     clusterList.append(Cluster(np.array([clusterList[i].center[0],
-                                                            clusterList[i].center[1],
-                                                            clusterList[i].center[2],
-                                                            clusterList[i].center[3],
-                                                            clusterList[i].center[4],
-                                                            clusterList[i].center[5]
+                                                         clusterList[i].center[1],
+                                                         clusterList[i].center[2],
+                                                         clusterList[i].center[3],
+                                                         clusterList[i].center[4],
+                                                         clusterList[i].center[5]
 
-                                                            ],
-                                                           dtype=np.uint8)))
-
-
+                                                         ],
+                                                        dtype=np.uint8)))
 
                     clusterList.pop(i)
             print(" {0} -> {1}".format(beforeCount, len(clusterList)))
@@ -1003,39 +1026,38 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
                     clusterList[clusterPair.clusterAIndex].center[0]) + len(
                     clusterList[clusterPair.clusterBIndex].pixelList) * float(
                     clusterList[clusterPair.clusterBIndex].center[0])) / (
-                                             len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
-                                         clusterList[clusterPair.clusterBIndex].pixelList)))
+                                         len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
+                                     clusterList[clusterPair.clusterBIndex].pixelList)))
                 newCenter2 = int((len(clusterList[clusterPair.clusterAIndex].pixelList) * float(
                     clusterList[clusterPair.clusterAIndex].center[1]) + len(
                     clusterList[clusterPair.clusterBIndex].pixelList) * float(
                     clusterList[clusterPair.clusterBIndex].center[1])) / (
-                                             len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
-                                         clusterList[clusterPair.clusterBIndex].pixelList)))
+                                         len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
+                                     clusterList[clusterPair.clusterBIndex].pixelList)))
                 newCenter3 = int((len(clusterList[clusterPair.clusterAIndex].pixelList) * float(
                     clusterList[clusterPair.clusterAIndex].center[2]) + len(
                     clusterList[clusterPair.clusterBIndex].pixelList) * float(
                     clusterList[clusterPair.clusterBIndex].center[2])) / (
-                                             len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
-                                         clusterList[clusterPair.clusterBIndex].pixelList)))
+                                         len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
+                                     clusterList[clusterPair.clusterBIndex].pixelList)))
                 newCenter4 = int((len(clusterList[clusterPair.clusterAIndex].pixelList) * float(
                     clusterList[clusterPair.clusterAIndex].center[3]) + len(
                     clusterList[clusterPair.clusterBIndex].pixelList) * float(
                     clusterList[clusterPair.clusterBIndex].center[3])) / (
-                                             len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
-                                         clusterList[clusterPair.clusterBIndex].pixelList)))
+                                         len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
+                                     clusterList[clusterPair.clusterBIndex].pixelList)))
                 newCenter5 = int((len(clusterList[clusterPair.clusterAIndex].pixelList) * float(
                     clusterList[clusterPair.clusterAIndex].center[4]) + len(
                     clusterList[clusterPair.clusterBIndex].pixelList) * float(
                     clusterList[clusterPair.clusterBIndex].center[4])) / (
-                                             len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
-                                         clusterList[clusterPair.clusterBIndex].pixelList)))
+                                         len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
+                                     clusterList[clusterPair.clusterBIndex].pixelList)))
                 newCenter6 = int((len(clusterList[clusterPair.clusterAIndex].pixelList) * float(
                     clusterList[clusterPair.clusterAIndex].center[5]) + len(
                     clusterList[clusterPair.clusterBIndex].pixelList) * float(
                     clusterList[clusterPair.clusterBIndex].center[5])) / (
-                                             len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
-                                         clusterList[clusterPair.clusterBIndex].pixelList)))
-
+                                         len(clusterList[clusterPair.clusterAIndex].pixelList) + len(
+                                     clusterList[clusterPair.clusterBIndex].pixelList)))
 
                 newClusterCenterList.append(
                     [newCenter1, newCenter2, newCenter3, newCenter4, newCenter5, newCenter6])
@@ -1052,11 +1074,10 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
             for index in mergedClusterIndexListSorted:
                 clusterList.pop(index)
 
-
             for center in newClusterCenterList:
                 clusterList.append(Cluster(
                     np.array([center[0], center[1], center[2], center[3], center[4], center[5]],
-                                dtype=np.uint8)))
+                             dtype=np.uint8)))
 
             print(" {0} -> {1}".format(beforeCount, len(clusterList)))
 
@@ -1099,8 +1120,8 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
     IsoData.SetGeoTransform(im_geotrans)  # 写入仿射变换参数
     print("设置投影信息")
     IsoData.SetProjection(im_proj)  # 写入投影
-    #修改调换回89行调换的宽高
-    newImgArray=newImgArray.transpose(0,2,1)
+    # 修改调换回89行调换的宽高
+    newImgArray = newImgArray.transpose(0, 2, 1)
     for i in range(newImgArray.shape[0]):
         IsoData.GetRasterBand(i + 1).WriteArray(newImgArray[i])
 
@@ -1114,7 +1135,9 @@ def isodata_mutispectral6(dataset, outputfilename, K: int, TN: int, TS: float, T
     logfilename:日志文件名字（例："test.log")
     20210422
 """
-def log_save(path,logfilename):
+
+
+def log_save(path, logfilename):
     os.chdir(path)
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
@@ -1140,6 +1163,8 @@ def log_save(path,logfilename):
     imgpath: 图像路径（例：r"E:\codes\stf\dataset\AHB\M_2018-5-12.tif"）
     band: 波段值 从0开始
 """
+
+
 def show_image(imgpath, band=999):
     img = gdal.Open(imgpath)
     bands = img.RasterCount
@@ -1150,8 +1175,8 @@ def show_image(imgpath, band=999):
     # img_gtf = img.GetGeoTransform()  # 获取仿射矩阵信息
     # img_proj = img.GetProjection()  # 获取投影信息
     # print("bands:",bands)
-    print("img_width:",img_width)
-    print("img_height:",img_height)
+    print("img_width:", img_width)
+    print("img_height:", img_height)
     img_data = img.ReadAsArray()
     # print(type(img_data))
     # img_data = img_data.astype('int16')
@@ -1193,6 +1218,8 @@ def show_image(imgpath, band=999):
     rows: 显示从0行开始指定的行数
     cols：显示从0列开始的指定列数
 """
+
+
 def show_imagepice(imgpath, band, rows, cols):
     img = gdal.Open(imgpath)
     bands = img.RasterCount
@@ -1203,9 +1230,9 @@ def show_imagepice(imgpath, band, rows, cols):
     # img_gtf = img.GetGeoTransform()  # 获取仿射矩阵信息
     # img_proj = img.GetProjection()  # 获取投影信息
 
-    print("bands:",bands)
-    print("img_width:",img_width)
-    print("img_height:",img_height)
+    print("bands:", bands)
+    print("img_width:", img_width)
+    print("img_height:", img_height)
     if band >= bands:
         print("out range of bands, it should be < ", bands)
         return
@@ -1224,7 +1251,9 @@ def show_imagepice(imgpath, band, rows, cols):
     filename: 保存tif图像的名称（例：a.tif）
     save_path: 保存图像的路径（例：r"E:\codes\stf\dataset\AHB"）
 """
-def save_tif(image_array, image_geotrans, image_projetion, filename, save_path,driver):
+
+
+def save_tif(image_array, image_geotrans, image_projetion, filename, save_path, driver):
     os.chdir(save_path)
     # if'int8' in image_array[0].dtype.name:
     #     datatype = gdal.GDT_Byte
@@ -1246,13 +1275,15 @@ def save_tif(image_array, image_geotrans, image_projetion, filename, save_path,d
         datas.GetRasterBand(1).WriteArray(image_array)
     else:
         for i in range(bands):
-            datas.GetRasterBand(i+1).WriteArray(image_array[i])
+            datas.GetRasterBand(i + 1).WriteArray(image_array[i])
     del datas
     print("save succfully")
     return
+
+
 def save_tif2(image_array, image_geotrans, image_projetion, save_path, driver):
     # os.chdir(save_path)
-    if'int8' in image_array[0].dtype.name:
+    if 'int8' in image_array[0].dtype.name:
         datatype = gdal.GDT_Byte
     elif "int16" in image_array[0].dtype.name:
         datatype = gdal.GDT_UInt16
@@ -1274,7 +1305,7 @@ def save_tif2(image_array, image_geotrans, image_projetion, save_path, driver):
         datas.GetRasterBand(1).WriteArray(image_array)
     else:
         for i in range(bands):
-            datas.GetRasterBand(i+1).WriteArray(image_array[i])
+            datas.GetRasterBand(i + 1).WriteArray(image_array[i])
     del datas
     print("save succfully")
     return
@@ -1291,6 +1322,8 @@ array2raster():
     array：需要保存的图像数组，必须是二维
     save_path: 保存图像的路径（例：r"E:\codes\stf\dataset\hdf"）
 """
+
+
 # hdf单波段保存tif#  hdf批量转tif
 def array2raster(tifname, GeoTransform, array, save_path):
     os.chdir(save_path)
@@ -1308,10 +1341,12 @@ def array2raster(tifname, GeoTransform, array, save_path):
     outRasterSRS.ImportFromEPSG(4326)
     outRaster.SetProjection(outRasterSRS.ExportToWkt())
     outband.FlushCache()
+
+
 def hdf2tif(hdfpath):
     #  获取文件夹内的文件名
     hdfNameList = os.listdir(hdfpath)
-    save_path=hdfpath
+    save_path = hdfpath
     for i in range(len(hdfNameList)):
         #  判断当前文件是否为HDF文件
         if (os.path.splitext(hdfNameList[i])[1] == ".hdf"):
@@ -1348,7 +1383,7 @@ def hdf2tif(hdfpath):
             from scipy.optimize import leastsq
             def func(i):
                 Transform0, Transform1, Transform2, Transform3, Transform4, Transform5 = i[0], i[1], i[2], i[3], i[4], \
-                                                                                         i[5]
+                    i[5]
                 return [Transform0 + PixelCoordinates[0][0] * Transform1 + PixelCoordinates[0][1] * Transform2 -
                         GeoCoordinates[0][0],
                         Transform3 + PixelCoordinates[0][0] * Transform4 + PixelCoordinates[0][1] * Transform5 -
@@ -1374,7 +1409,7 @@ def hdf2tif(hdfpath):
             datasetsshape = datasets.GetSubDatasets()
             for i in range(len(datasetsshape)):
                 print("datasetsshape content,%d----%s:" % (i, datasetsshape[i]))
-            #hdf文件中含有多个图像信息，包括1km和500米，数组第一维从11开始后的6个波段为500米波段
+            # hdf文件中含有多个图像信息，包括1km和500米，数组第一维从11开始后的6个波段为500米波段
             Dataset = datasets.GetSubDatasets()[12][0]
             Raster = gdal.Open(Dataset)
             arr = Raster.ReadAsArray()
@@ -1390,6 +1425,8 @@ def hdf2tif(hdfpath):
     xsize：目标图像宽
     ysize：目标图像高
 """
+
+
 def img_resize(srcarr, xsize, ysize):
     srcimg = Image.fromarray(srcarr)
     dstarr = np.array(srcimg.resize((xsize, ysize)))
@@ -1401,6 +1438,8 @@ def img_resize(srcarr, xsize, ysize):
     src: 源图像路径（例：r"E:\origin.jpg"）
     dst: 缩放后的图像存储路径，需带文件名（例：r"E:\1.jpg"）
 """
+
+
 def img_resize_jpg(src, dst, xsize, ysize):
     img = cv2.imread(src, cv2.IMREAD_COLOR)
     print("img", img.shape)
@@ -1416,13 +1455,13 @@ def img_resize_jpg(src, dst, xsize, ysize):
     col: 影像分块列像素个数
 
 """
+
+
 def addpad(arr, row, col):
-    padrownum = row-arr.shape[1] % row
-    padcolnum = col-arr.shape[2] % col
-    print("数据扩充，末尾增加%d行，%d列。"%(padrownum, padcolnum))
+    padrownum = row - arr.shape[1] % row
+    padcolnum = col - arr.shape[2] % col
+    print("数据扩充，末尾增加%d行，%d列。" % (padrownum, padcolnum))
     return np.pad(arr, ((0, 0), (0, padrownum), (0, padcolnum)), "constant")
-
-
 
 
 """
@@ -1430,9 +1469,11 @@ def addpad(arr, row, col):
         filepath:配置文件路径
 """
 import yaml
+
+
 def test_yaml(filepath):
-    with open(filepath, 'r') as f: # 用with读取文件更好
-        configs = yaml.load(f, Loader=yaml.FullLoader) # 按字典格式读取并返回
+    with open(filepath, 'r') as f:  # 用with读取文件更好
+        configs = yaml.load(f, Loader=yaml.FullLoader)  # 按字典格式读取并返回
     # 显示读取后的内容
     # print(type(configs)) #<class 'dict'>
     # print(configs["stage1"]) #{'number': 3, 'banchsize': 32}
@@ -1456,20 +1497,22 @@ def test_yaml(filepath):
 """
 import yaml
 import argparse
+
+
 def dict2namespace(config):
-    #声明命名空间
+    # 声明命名空间
     namespace = argparse.Namespace()
     for key, value in config.items():
         if isinstance(value, dict):
             new_value = dict2namespace(value)
         else:
             new_value = value
-        #将参数对添加到命名空间中
+        # 将参数对添加到命名空间中
         setattr(namespace, key, new_value)
     return namespace
 
-def test_argparse(args):
 
+def test_argparse(args):
     filepath = args.cfg
 
     with open(filepath, 'r') as f:
@@ -1488,10 +1531,7 @@ def test_argparse(args):
     return configs
 
 
-
 def test1():
-
-
     # # spath1 =  r"E:\codes\dataset\biascnn\biastest\AHB\L_2018-5-12.tif"
     # x = r"E:\datasets\stfdatasets\LGC\LGC\Landsat\2004_107_Apr16\20040416_TM.tif"
     #
@@ -1499,8 +1539,6 @@ def test1():
     # show_image(x, 3)
     # show_image(x, 4)
     # show_image(x, 5)
-
-
 
     # sdir = r"E:\datasets\stfdatasets\Coleambally_Irrigation_Area\CIA\Landsat\2001_313_09nov\L71093084_08420011108_HRF_modtran_surf_ref_agd66.tif"
 
@@ -1576,8 +1614,6 @@ def test1():
     # tdir = r"E:\codes\dataset\CIA\M2002_117_27apr.tif"
     # tdir = r"E:\codes\dataset\CIA\M2002_124_04may.tif"
 
-
-
     # savedir = r"E:\datasets\stfdatasets\LGC\LGC\Landsat\2004_107_Apr16\20040416_TM.tif"
     # tdir = r"E:\codes\dataset\LGC\L20040416_TM.tif"
     # savedir = r"E:\datasets\stfdatasets\LGC\LGC\Landsat\2004_123_May02\20040502_TM.tif"
@@ -1641,14 +1677,12 @@ def test1():
     # rows = 1792
     # cols = 1280
 
-
-
     # rows = 2560
     # cols = 3072
     #
     # crop2tif(savedir,tdir,rows,cols)
 
-    x =  r"E:\codes\dataset\LGC\MODIS\M20050403_TM.tif"
+    x = r"E:\codes\dataset\LGC\MODIS\M20050403_TM.tif"
 
     # show_image(spath1,5)
     show_image(x, 3)
@@ -1656,13 +1690,11 @@ def test1():
     show_image(x, 5)
 
 
-
 def test2():
     # xpath = r"E:\datasets\stfdatasets\CIA\CIA\MODIS\2001_281_08oct\MOD09GA_A2001281.sur_refl.tif"
     # # ypath = r"E:\codes\dataset\CIA\train_set\L2001_290_17oct.tif"
     # show_image(xpath, 0)
     # # show_image(ypath, 0)
-
 
     # inputFilename = r'E:\codes\dataset\CIA\train_set\L2002_053_22feb.tif'
     # outputFilename = r"E:\codes\dataset\CIA\STARFM-FSDAF-test_results\isodata-classfy-L2002_053_22feb.tif"
@@ -1681,18 +1713,21 @@ def test2():
 
     return
 
+
 def test():
     imgdir = r"E:\codes\dataset\2021prcv_contest\test_set\image1"
     txtdir = r"E:\codes\dataset\2021prcv_contest\test_set\list\val.txt"
     write_imgname_to_txtfile(imgdir, txtdir)
 
+
 def test111():
-    a = torch.randn((4,4))
+    a = torch.randn((4, 4))
     print(a)
-    b = a[0:2,0:2]
+    b = a[0:2, 0:2]
     print(b)
-    c = a[2:4,2:5]
+    c = a[2:4, 2:5]
     print(c)
+
 
 def test3():
     # filepath = os.path.join(os.getcwd(), 'a.yaml') # 文件路径,这里需要将a.yaml文件与本程序文件放在同级目录下
@@ -1703,15 +1738,18 @@ def test3():
     args = parser.parse_args()
     test_argparse(args)
 
+
 def show_img():
     x = r"E:\codes\codes\stf\baseline\stfnet\logs\v1\stfganlist\L2001_313_09nov_v1_100000_stfganlist.tif"
-    show_image(x,0)
+    show_image(x, 0)
     targetbefor = r"E:\codes\dataset\CIA\train_set\L2001_306_02nov.tif"
-    show_image(targetbefor,0)
+    show_image(targetbefor, 0)
     target = r"E:\codes\dataset\CIA\train_set\L2001_313_09nov.tif"
-    show_image(target,0)
+    show_image(target, 0)
     targetafter = r"E:\codes\dataset\CIA\train_set\L2001_329_25nov.tif "
-    show_image(targetafter,0)
+    show_image(targetafter, 0)
+
+
 if __name__ == "__main__":
     # example()
 
@@ -1828,7 +1866,7 @@ if __name__ == "__main__":
     return
 """
 
-#save_tif图像的读取和存储
+# save_tif图像的读取和存储
 """   
     filepath = r"E:\codes\stf\dataset\AHB\L_2018-5-12.tif"
     save_path = r"E:\codes\stf\dataset\AHB"

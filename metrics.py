@@ -10,16 +10,20 @@ function:
             ergas_me():计算总全局相对误差
             sam_me():计算光谱角制图
 """
-import gdal
-import skimage.metrics as sm
+import os
+import sys
+
+from osgeo import gdal
 import numpy as np
-import os,sys
-sys.path.append(os.path.dirname(__file__)+os.sep+'../')
+import skimage.metrics as sm
+
+sys.path.append(os.path.dirname(__file__) + os.sep + '../')
 
 from scipy.stats import pearsonr
 from numpy.linalg import norm
 
-np.seterr(divide='ignore',invalid='ignore')
+np.seterr(divide='ignore', invalid='ignore')
+
 
 # #设置log.debug()写入文件
 # logpath= r"E:\codes\stf\logs"
@@ -37,7 +41,7 @@ def rmse_me(pre, targ):
     if len(pre.shape) >= 3:
         c, w, h = pre.shape
     else:
-        w, h, c = (pre.shape),1
+        w, h, c = (pre.shape), 1
 
     if c == 1:
         print("just one band")
@@ -50,7 +54,7 @@ def rmse_me(pre, targ):
         for i in range(c):
             result = sm.mean_squared_error(pre[i], targ[i])
             result = np.sqrt(result)
-            print("rmse b"+str(i+1)+" is "+str(result))
+            print("rmse b" + str(i + 1) + " is " + str(result))
             # logger.debug("rmse b"+str(i+1)+" is "+str(result))
         result = sm.mean_squared_error(pre, targ)
         result = np.sqrt(result)
@@ -71,7 +75,6 @@ def ssim_me(pre, targ):
     if len(pre.shape) >= 3:
         c, w, h = pre.shape
 
-
     if c == 1:
         print("just one band")
         # logger.debug("just one band")
@@ -81,7 +84,7 @@ def ssim_me(pre, targ):
     else:
         for i in range(c):
             result = sm.structural_similarity(pre[i], targ[i], data_range=1)
-            print("ssim b"+str(i+1)+" is "+str(result))
+            print("ssim b" + str(i + 1) + " is " + str(result))
             # logger.debug("ssim b"+str(i+1)+" is "+str(result))
 
         pre = pre.transpose(1, 2, 0)
@@ -103,7 +106,7 @@ def cc_me(pre, targ):
     if len(pre.shape) >= 3:
         c, w, h = pre.shape
     else:
-        w, h, c = (pre.shape),1
+        w, h, c = (pre.shape), 1
 
     if c == 1:
         print("just one band")
@@ -114,16 +117,16 @@ def cc_me(pre, targ):
         print("cc all is :", result)
         # logger.debug("cc all is :"+str(result))
     else:
-        sum=0
+        sum = 0
         for i in range(c):
             pre1 = pre[i].reshape((w * h), order='C')
             targ1 = targ[i].reshape((w * h), order='C')
             result = pearsonr(pre1, targ1)[0]
-            print("cc b"+str(i+1)+" is "+str(result))
+            print("cc b" + str(i + 1) + " is " + str(result))
             # logger.debug("cc b"+str(i+1)+" is "+str(result))
-            sum=sum+result
+            sum = sum + result
 
-        result = sum/c
+        result = sum / c
         print("cc all is :", result)
         # logger.debug("cc all is :"+str(result))
 
@@ -131,22 +134,21 @@ def cc_me(pre, targ):
 
 
 def ergas_me(pre, targ, ratio=0.03):
-
     print("------------------------------")
     print("start compute ergas")
     # print("pre shape and targ shape is "+str(pre.shape)+"|"+str(targ.shape))
     # logger.debug("------------------------------")
     # logger.debug("start compute ergas")
     # logger.debug("pre shape and targ shape is "+str(pre.shape)+"|"+str(targ.shape))
-    c , w , h = pre.shape
+    c, w, h = pre.shape
     targ2 = targ.transpose(1, 2, 0)
     print(pre.shape)
     sum = 0.0
     for i in range(c):
         result = sm.mean_squared_error(pre[i], targ[i])
         result = np.sqrt(result)
-        sum += result**2 / np.mean(targ2[:, :, i])**2
-    re =  100 * ratio * np.sqrt(sum/c)
+        sum += result ** 2 / np.mean(targ2[:, :, i]) ** 2
+    re = 100 * ratio * np.sqrt(sum / c)
     print("ergas is :", re)
     # logger.debug("ergas is :" + str(re))
     return
@@ -162,11 +164,11 @@ def sam_me(pre, targ):
     pre1 = pre.transpose(1, 2, 0)
     targ1 = targ.transpose(1, 2, 0)
     # print(img2data.shape)
-    assert pre1.ndim ==3 and pre1.shape == targ1.shape
-    dot_sum = np.sum(pre1*targ1, axis=2)
+    assert pre1.ndim == 3 and pre1.shape == targ1.shape
+    dot_sum = np.sum(pre1 * targ1, axis=2)
     norm_true = norm(pre1, axis=2)
     norm_pred = norm(targ1, axis=2)
-    res = np.arccos(dot_sum/norm_pred/norm_true)
+    res = np.arccos(dot_sum / norm_pred / norm_true)
     is_nan = np.nonzero(np.isnan(res))
     for (x, y) in zip(is_nan[0], is_nan[1]):
         res[x, y] = 00
@@ -177,8 +179,8 @@ def sam_me(pre, targ):
 
 
 def test():
-    #STARFM
-    #CIA
+    # STARFM
+    # CIA
     # x = r"E:\codes\dataset\res\STARFM\CIA\STARFM_L2001_290_17oct.tif"
     # x = r"E:\codes\dataset\res\STARFM\CIA\STARFM_L2001_306_02nov.tif"
     # x = r"E:\codes\dataset\res\STARFM\CIA\STARFM_L2001_313_09nov.tif"
@@ -195,7 +197,7 @@ def test():
     # x = r"E:\codes\dataset\res\STARFM\CIA\STARFM_L2002_108_18apr.tif"
     # x = r"E:\codes\dataset\res\STARFM\CIA\STARFM_L2002_117_27apr.tif"
 
-    #LGC
+    # LGC
     # x = r"E:\codes\dataset\res\STARFM\LGC\STARFM_L20040502_TM.tif"
     # x = r"E:\codes\dataset\res\STARFM\LGC\STARFM_L20040705_TM.tif"
     # x = r"E:\codes\dataset\res\STARFM\LGC\STARFM_L20040806_TM.tif"
@@ -209,8 +211,8 @@ def test():
     # x = r"E:\codes\dataset\res\STARFM\LGC\STARFM_L20050214_TM.tif"
     # x = r"E:\codes\dataset\res\STARFM\LGC\STARFM_L20050302_TM.tif"
 
-    #FSDAF
-    #CIA
+    # FSDAF
+    # CIA
     # x = r"E:\codes\dataset\res\FSDAF\CIA\FSDAF_L2001_290_17oct.tif"
     # x = r"E:\codes\dataset\res\FSDAF\CIA\FSDAF_L2001_306_02nov.tif"
     # x = r"E:\codes\dataset\res\FSDAF\CIA\FSDAF_L2001_313_09nov.tif"
@@ -227,7 +229,7 @@ def test():
     # x = r"E:\codes\dataset\res\FSDAF\CIA\FSDAF_L2002_108_18apr.tif"
     # x = r"E:\codes\dataset\res\FSDAF\CIA\FSDAF_L2002_117_27apr.tif"
 
-    #LGC
+    # LGC
     # x = r"E:\codes\dataset\res\FSDAF\LGC\FSDAF_L20040502_TM.tif"
     # x = r"E:\codes\dataset\res\FSDAF\LGC\FSDAF_L20040705_TM.tif"
     # x = r"E:\codes\dataset\res\FSDAF\LGC\FSDAF_L20040806_TM.tif"
@@ -241,8 +243,8 @@ def test():
     # x = r"E:\codes\dataset\res\FSDAF\LGC\FSDAF_L20050214_TM.tif"
     # x = r"E:\codes\dataset\res\FSDAF\LGC\FSDAF_L20050302_TM.tif"
 
-    #stfnet
-    #CIA
+    # stfnet
+    # CIA
     # x = r"E:\codes\dataset\res\stfnet\CIA\stfnet_L2001_290_17oct.tif"
     # x = r"E:\codes\dataset\res\stfnet\CIA\stfnet_L2001_306_02nov.tif"
     # x = r"E:\codes\dataset\res\stfnet\CIA\stfnet_L2001_313_09nov.tif"
@@ -259,7 +261,7 @@ def test():
     # x = r"E:\codes\dataset\res\stfnet\CIA\stfnet_L2002_108_18apr.tif"
     # x = r"E:\codes\dataset\res\stfnet\CIA\stfnet_L2002_117_27apr.tif"
 
-    #LGC
+    # LGC
     # x = r"E:\codes\dataset\res\stfnet\LGC\stfnet_L20040502_TM.tif"
     # x = r"E:\codes\dataset\res\stfnet\LGC\stfnet_L20040705_TM.tif"
     # x = r"E:\codes\dataset\res\stfnet\LGC\stfnet_L20040806_TM.tif"
@@ -273,9 +275,9 @@ def test():
     # x = r"E:\codes\dataset\res\stfnet\LGC\stfnet_L20050214_TM.tif"
     # x = r"E:\codes\dataset\res\stfnet\LGC\stfnet_L20050302_TM.tif"
 
-    #stfmlp
-    #CIA
-    # x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2001_290_17oct.tif"
+    # stfmlp
+    # CIA
+    x = r"D:\useful\program\rs\StfMLP\logs\stfmlp_L2001_290_17oct.tif"
     # x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2001_306_02nov.tif"
     # x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2001_313_09nov.tif"
     # x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2001_329_25nov.tif"
@@ -289,9 +291,9 @@ def test():
     # x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2002_092_02apr.tif"
     # x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2002_101_11apr.tif"
     # x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2002_108_18apr.tif"
-    x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2002_117_27apr.tif"
+    # x = r"D:\codes\dataset\res\stfmlp\CIA\stfmlp_L2002_117_27apr.tif"
 
-    #LGC
+    # LGC
     # x = r"D:\codes\dataset\res\stfmlp\LGC\stfmlp_L20040502_TM.tif"
     # x = r"D:\codes\dataset\res\stfmlp\LGC\stfmlp_L20040705_TM.tif"
     # x = r"D:\codes\dataset\res\stfmlp\LGC\stfmlp_L20040806_TM.tif"
@@ -305,112 +307,8 @@ def test():
     # x = r"D:\codes\dataset\res\stfmlp\LGC\stfmlp_L20050214_TM.tif"
     # x = r"D:\codes\dataset\res\stfmlp\LGC\stfmlp_L20050302_TM.tif"
 
-    #CIA TARGET
-    # target = r"D:\codes\dataset\CIA\train_set\L2001_290_17oct.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2001_306_02nov.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2001_313_09nov.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2001_329_25nov.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2001_338_04dec.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_005_05jan.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_012_12jan.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_044_13feb.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_053_22feb.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_069_10mar.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_076_17mar.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_092_02apr.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_101_11apr.tif"
-    # target = r"D:\codes\dataset\CIA\train_set\L2002_108_18apr.tif"
-    target = r"D:\codes\dataset\CIA\train_set\L2002_117_27apr.tif"
-
-    #LGC TARGET
-    # target = r"D:\codes\dataset\LGC\train_set\L20040502_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20040705_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20040806_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20040822_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20041025_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20041126_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20041212_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20041228_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20050113_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20050129_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20050214_TM.tif"
-    # target = r"D:\codes\dataset\LGC\train_set\L20050302_TM.tif"
-
-
-    channels = 6
-    start = 0
-    img_x = gdal.Open(x)
-
-    img_y = gdal.Open(target)
-
-    pre = img_x.ReadAsArray()/ 10000
-    targ = img_y.ReadAsArray()/ 10000
-
-    # if pre.shape[1]!=targ.shape[1]:
-    #     targ = targ[:,:pre.shape[1],:pre.shape[2]]
-
-    if channels==6:
-        pre = pre[0:,:,:]
-        targ = targ[0:,:,:]
-    elif start == 0:
-        pre = pre[0:3,:,:]
-        targ = targ[0:3,:,:]
-    else:
-        pre = pre[3:,:,:]
-        targ = targ[3:,:,:]
-
-    #由于李军老师提出的数据集实验中，反射率存储时乘以255倍，所以除以255进行还原
-
-
-    # pre = img_x.ReadAsArray() /255
-    # # pre2 = img_xmodis.ReadAsArray()/ 255
-    # # pre = pre1 - pre2
-    # targ = img_y.ReadAsArray()/255
-    # 计算rmsex
-    # pre = img_x.ReadAsArray() / 255
-    # targ = img_y.ReadAsArray()/ 255
-    rmse_me(pre, targ)
-
-    # 计算cc
-    cc_me(pre, targ)
-
-    # 计算ssim
-    ssim_me(pre, targ)
-
-    # 计算 ergas
-    ergas_me(pre, targ)
-
-    #计算 sam
-    sam_me(pre, targ)
-
-
-
-def test_re1():
-
-    #stfmlp_re1
-    #CIA
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2001_290_17oct.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2001_306_02nov.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2001_313_09nov.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2001_329_25nov.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2001_338_04dec.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_005_05jan.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_012_12jan.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_044_13feb.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_053_22feb.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_069_10mar.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_076_17mar.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_092_02apr.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_101_11apr.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_108_18apr.tif"
-    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_117_27apr.tif"
-
-   
-
-
-
-    #CIA TARGET
-    # target = r"D:\codes\dataset\CIA\train_set\L2001_290_17oct.tif"
+    # CIA TARGET
+    target = r"D:\useful\program\rs\StfMLP\datasetlist\CIA\train_set\L2001_290_17oct.tif"
     # target = r"D:\codes\dataset\CIA\train_set\L2001_306_02nov.tif"
     # target = r"D:\codes\dataset\CIA\train_set\L2001_313_09nov.tif"
     # target = r"D:\codes\dataset\CIA\train_set\L2001_329_25nov.tif"
@@ -426,24 +324,7 @@ def test_re1():
     # target = r"D:\codes\dataset\CIA\train_set\L2002_108_18apr.tif"
     # target = r"D:\codes\dataset\CIA\train_set\L2002_117_27apr.tif"
 
-
-
-
-    #LGC
-
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20040502_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20040705_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20040806_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20040822_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20041025_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20041126_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20041212_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20041228_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20050113_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20050129_TM.tif"
-    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20050214_TM.tif"
-    x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20050302_TM.tif"
-    #LGC TARGET
+    # LGC TARGET
     # target = r"D:\codes\dataset\LGC\train_set\L20040502_TM.tif"
     # target = r"D:\codes\dataset\LGC\train_set\L20040705_TM.tif"
     # target = r"D:\codes\dataset\LGC\train_set\L20040806_TM.tif"
@@ -455,12 +336,7 @@ def test_re1():
     # target = r"D:\codes\dataset\LGC\train_set\L20050113_TM.tif"
     # target = r"D:\codes\dataset\LGC\train_set\L20050129_TM.tif"
     # target = r"D:\codes\dataset\LGC\train_set\L20050214_TM.tif"
-    target = r"D:\codes\dataset\LGC\train_set\L20050302_TM.tif"
-
-
-
-
-
+    # target = r"D:\codes\dataset\LGC\train_set\L20050302_TM.tif"
 
     channels = 6
     start = 0
@@ -468,24 +344,23 @@ def test_re1():
 
     img_y = gdal.Open(target)
 
-    pre = img_x.ReadAsArray()/ 10000
-    targ = img_y.ReadAsArray()/ 10000
+    pre = img_x.ReadAsArray() / 10000
+    targ = img_y.ReadAsArray() / 10000
 
     # if pre.shape[1]!=targ.shape[1]:
     #     targ = targ[:,:pre.shape[1],:pre.shape[2]]
 
-    if channels==6:
-        pre = pre[0:,:,:]
-        targ = targ[0:,:,:]
+    if channels == 6:
+        pre = pre[0:, :, :]
+        targ = targ[0:, :, :]
     elif start == 0:
-        pre = pre[0:3,:,:]
-        targ = targ[0:3,:,:]
+        pre = pre[0:3, :, :]
+        targ = targ[0:3, :, :]
     else:
-        pre = pre[3:,:,:]
-        targ = targ[3:,:,:]
+        pre = pre[3:, :, :]
+        targ = targ[3:, :, :]
 
-    #由于李军老师提出的数据集实验中，反射率存储时乘以255倍，所以除以255进行还原
-
+    # 由于李军老师提出的数据集实验中，反射率存储时乘以255倍，所以除以255进行还原
 
     # pre = img_x.ReadAsArray() /255
     # # pre2 = img_xmodis.ReadAsArray()/ 255
@@ -505,9 +380,159 @@ def test_re1():
     # 计算 ergas
     ergas_me(pre, targ)
 
-    #计算 sam
+    # 计算 sam
     sam_me(pre, targ)
+
+
+def test_re1():
+    # stfmlp_re1
+    # CIA
+    x = r"D:\useful\program\rs\StfMLP\logs\mod_stf.tif"
+    # x = r"D:\useful\program\rs\StfMLP\logs\stfmlp_L2001_306_02nov.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2001_313_09nov.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2001_329_25nov.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2001_338_04dec.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_005_05jan.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_012_12jan.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_044_13feb.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_053_22feb.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_069_10mar.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_076_17mar.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_092_02apr.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_101_11apr.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_108_18apr.tif"
+    # x = r"D:\codes\dataset\res\re1_result\stfmlp_L2002_117_27apr.tif"
+
+    # CIA TARGET
+    target = r"D:\useful\program\rs\StfMLP\datasetlist\CIA\train_set\L2001_290_17oct.tif"
+    # target = r"D:\useful\program\rs\StfMLP\datasetlist\CIA\train_set\L2001_306_02nov.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2001_313_09nov.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2001_329_25nov.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2001_338_04dec.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_005_05jan.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_012_12jan.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_044_13feb.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_053_22feb.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_069_10mar.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_076_17mar.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_092_02apr.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_101_11apr.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_108_18apr.tif"
+    # target = r"D:\codes\dataset\CIA\train_set\L2002_117_27apr.tif"
+
+    # LGC
+
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20040502_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20040705_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20040806_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20040822_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20041025_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20041126_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20041212_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20041228_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20050113_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20050129_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20050214_TM.tif"
+    # x = r"D:\codes\dataset\res\re1_result\lgc\stfmlp_L20050302_TM.tif"
+    # LGC TARGET
+    # target = r"D:\codes\dataset\LGC\train_set\L20040502_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20040705_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20040806_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20040822_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20041025_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20041126_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20041212_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20041228_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20050113_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20050129_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20050214_TM.tif"
+    # target = r"D:\codes\dataset\LGC\train_set\L20050302_TM.tif"
+
+    channels = 6
+    start = 0
+    img_x = gdal.Open(x)
+
+    img_y = gdal.Open(target)
+
+    pre = img_x.ReadAsArray() / 10000
+    targ = img_y.ReadAsArray() / 10000
+
+    # if pre.shape[1]!=targ.shape[1]:
+    #     targ = targ[:,:pre.shape[1],:pre.shape[2]]
+
+    if channels == 6:
+        pre = pre[0:, :, :]
+        targ = targ[0:, :, :]
+    elif start == 0:
+        pre = pre[0:3, :, :]
+        targ = targ[0:3, :, :]
+    else:
+        pre = pre[3:, :, :]
+        targ = targ[3:, :, :]
+
+    # 由于李军老师提出的数据集实验中，反射率存储时乘以255倍，所以除以255进行还原
+
+    # pre = img_x.ReadAsArray() /255
+    # # pre2 = img_xmodis.ReadAsArray()/ 255
+    # # pre = pre1 - pre2
+    # targ = img_y.ReadAsArray()/255
+    # 计算rmsex
+    # pre = img_x.ReadAsArray() / 255
+    # targ = img_y.ReadAsArray()/ 255
+    rmse_me(pre, targ)
+
+    # 计算cc
+    cc_me(pre, targ)
+
+    # 计算ssim
+    ssim_me(pre, targ)
+
+    # 计算 ergas
+    ergas_me(pre, targ)
+
+    # 计算 sam
+    sam_me(pre, targ)
+
 
 if __name__ == "__main__":
     # test()
     test_re1()
+
+
+# D:\anaconda3\envs\rs\python.exe D:\useful\program\rs\StfMLP\metrics.py
+# ------------------------------
+# start compute rmse
+# rmse b1 is 0.008232887185586249
+# rmse b2 is 0.010072634478553348
+# rmse b3 is 0.015501047318867544
+# rmse b4 is 0.030326543401787826
+# rmse b5 is 0.04295661740182496
+# rmse b6 is 0.03792869085219374
+# rmse all is : 0.027728074424667754
+# ------------------------------
+# start compute cc
+# cc b1 is 0.8805823275607206
+# cc b2 is 0.8731908327330045
+# cc b3 is 0.9053000640111366
+# cc b4 is 0.9483500007450246
+# cc b5 is 0.8850721024827056
+# cc b6 is 0.880655544541366
+# cc all is : 0.8955251453456596
+# ------------------------------
+# start compute ssim
+# ssim b1 is 0.9642929541479899
+# ssim b2 is 0.9567361052459629
+# ssim b3 is 0.9203703815549117
+# ssim b4 is 0.8868863209001128
+# ssim b5 is 0.7946156717987051
+# ssim b6 is 0.8019264539853354
+# ssim all is : 0.887471314605503
+# ------------------------------
+# start compute ergas
+# (6, 1800, 1280)
+# ergas is : 0.5349381924671835
+# ------------------------------
+# start compute sam
+# sam is : 0.08763976598036768
+#
+# 进程已结束，退出代码为 0

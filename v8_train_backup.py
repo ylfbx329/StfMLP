@@ -701,8 +701,6 @@ def main(index):
             f1 = f1.to(torch.float32) / 10000
             f3 = f3.to(torch.float32) / 10000
             # label = label.to(torch.float32)/10000
-            import torchinfo
-            torchinfo.summary(model, input_data=(c1, c2, c3, f1, f3))
             x1, x2, x3, x4 = model(c1, c2, c3, f1, f3)
             # if channels == 6:
             #     output = model(c1,c2,f1)
